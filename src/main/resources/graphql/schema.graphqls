@@ -1,0 +1,20 @@
+type Order {
+  id: ID!
+  customer: String
+  amount: Float
+  status: String
+}
+
+type Query {
+  orders: [Order]
+  orderById(id: ID!): Order
+}
+
+input NewOrder {
+  customer: String!
+  amount: Float!
+}
+
+type Mutation {
+  createOrder(input: NewOrder!): Order
+}

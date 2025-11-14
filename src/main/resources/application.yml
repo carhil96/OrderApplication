@@ -1,0 +1,23 @@
+app:
+  build: .
+  image: java-microservice-example:latest
+  ports:
+    - 8080:8080
+  environment:
+    SPRING_PROFILES_ACTIVE: local
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/appdb
+    SPRING_DATASOURCE_USERNAME: app
+    SPRING_DATASOURCE_PASSWORD: password
+    SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    SPRING_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:9000/default
+    SPRING_LOGSTASH_HOST: logstash
+    SPRING_LOGSTASH_PORT: 5002
+  depends_on:
+    postgres:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+    clickhouse:
+      condition: service_healthy
+    logstash:
+      condition: service_healthy

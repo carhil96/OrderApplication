@@ -1,14 +1,19 @@
 package com.example.app.graphql;
 
-import com.coxautodev.graphql.tools.GraphQLMutationResolver;
-import com.coxautodev.graphql.tools.GraphQLQueryResolver;
+import graphql.kickstart.tools.GraphQLMutationResolver;
+import graphql.kickstart.tools.GraphQLQueryResolver;
 import com.example.app.domain.Order;
 import com.example.app.repository.OrderRepository;
 import com.example.app.service.OrderService;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * GraphQL Resolver para operaciones de Order
+ * Compatible con graphql-spring-boot-starter 11.1.0
+ */
 @Component
 public class OrderResolver implements GraphQLQueryResolver, GraphQLMutationResolver {
 
@@ -20,15 +25,15 @@ public class OrderResolver implements GraphQLQueryResolver, GraphQLMutationResol
     this.service = service;
   }
 
-  public List<Order> orders() {
-    return repo.findAll();
-  }
+    public List<Order> orders() {
+      return repo.findAll();
+    }
 
-  public Order orderById(Long id) {
-    return repo.findById(id).orElse(null);
-  }
+    public Order orderById(Integer id) {
+      return repo.findById(id).orElse(null);
+    }
 
-  public Order createOrder(String customer, Double amount) {
+  public Order createOrder(String customer, BigDecimal amount) {
     Order o = new Order();
     o.setCustomer(customer);
     o.setAmount(amount);

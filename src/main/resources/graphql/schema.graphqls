@@ -3,6 +3,7 @@ type Order {
   customer: String
   amount: Float
   status: String
+  createdAt: String
 }
 
 type Query {
@@ -10,11 +11,6 @@ type Query {
   orderById(id: ID!): Order
 }
 
-input NewOrder {
-  customer: String!
-  amount: Float!
-}
-
 type Mutation {
-  createOrder(input: NewOrder!): Order
+  createOrder(customer: String!, amount: Float!): Order
 }

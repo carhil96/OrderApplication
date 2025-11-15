@@ -6,12 +6,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class ClickHouseWriter {
@@ -57,9 +59,9 @@ public class ClickHouseWriter {
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 for (Order o : batch) {
-                    ps.setLong(1, o.getId() != null ? o.getId() : 0L);
+                    ps.setInt(1, o.getId() != null ? o.getId() : 0);
                     ps.setString(2, o.getCustomer() != null ? o.getCustomer() : "UNKNOWN");
-                    ps.setDouble(3, o.getAmount() != null ? o.getAmount() : 0.0);
+                    ps.setBigDecimal(3, o.getAmount() != null ? o.getAmount() : BigDecimal.valueOf(0.0));
                     ps.setString(4, o.getStatus() != null ? o.getStatus() : "CREATED");
                     ps.setObject(5, o.getCreatedAt() != null ? o.getCreatedAt() : Instant.now());
                     ps.addBatch();
@@ -67,11 +69,11 @@ public class ClickHouseWriter {
                 ps.executeBatch();
             }
 
-            log.info("Flushed {} orders to ClickHouse", batch.size());
+            log.info("Flushed {} orders to ClickHouse", Optional.of(batch.size()));
 
         } catch (Exception e) {
             // No lanzamos la excepción: simplemente loggeamos y el buffer ya está limpio
-            log.error("Error writing to ClickHouse, orders lost: {}", batch.size(), e);
+            log.error("Error writing to ClickHouse, orders lost: {}", Optional.of(batch.size()), e);
         }
     }
 }

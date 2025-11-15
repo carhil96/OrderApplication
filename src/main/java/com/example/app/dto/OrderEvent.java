@@ -1,22 +1,24 @@
 package com.example.app.dto;
 
+import java.math.BigDecimal;
+
 public class OrderEvent {
-  private Long id;
+  private Integer id;
   private String customer;
-  private Double amount;
+  private BigDecimal amount;
 
   public OrderEvent() {}
 
-  public OrderEvent(Long id, String customer, Double amount) {
+  public OrderEvent(Integer id, String customer, BigDecimal amount) {
     this.id = id;
     this.customer = customer;
     this.amount = amount;
   }
 
-  public Long getId() { return id; }
-  public void setId(Long id) { this.id = id; }
+  public Integer getId() { return id; }
+  public void setId(Integer id) { this.id = id; }
   public String getCustomer() { return customer; }
   public void setCustomer(String customer) { this.customer = customer; }
-  public Double getAmount() { return amount; }
-  public void setAmount(Double amount) { this.amount = amount; }
+  public BigDecimal getAmount() { return amount; }
+  public void setAmount(BigDecimal amount) { this.amount = amount; }
 }

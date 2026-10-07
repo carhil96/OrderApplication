@@ -3,7 +3,7 @@ package com.example.app.service;
 import com.example.app.domain.Order;
 import com.example.app.dto.OrderEvent;
 import com.example.app.repository.OrderRepository;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -16,12 +16,14 @@ public class OrderService {
   private final OrderRepository repo;
   private final KafkaTemplate<String, String> kafka;
   private final ClickHouseWriter clickHouseWriter;
-  private final ObjectMapper mapper = new ObjectMapper();
+  private final JsonMapper mapper;
 
-  public OrderService(OrderRepository repo, KafkaTemplate<String, String> kafka, ClickHouseWriter clickHouseWriter) {
+  public OrderService(OrderRepository repo, KafkaTemplate<String, String> kafka, ClickHouseWriter clickHouseWriter,
+      JsonMapper mapper) {
     this.repo = repo;
     this.kafka = kafka;
     this.clickHouseWriter = clickHouseWriter;
+    this.mapper = mapper;
   }
 
   @Transactional

@@ -1,5 +1,5 @@
 # Usa Maven + JDK para build
-FROM maven:3.9.4-eclipse-temurin-11 AS build
+FROM maven:3.9.11-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copiar archivos del proyecto
@@ -10,7 +10,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests -U
 
 # Imagen final con JDK
-FROM eclipse-temurin:11-jre
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 
 # Instalar netcat-openbsd para wait-for-it.sh
@@ -24,4 +24,4 @@ COPY wait-for-it.sh /app/wait-for-it.sh
 RUN chmod +x /app/wait-for-it.sh
 
 # Comando de arranque usando wait-for-it con JAVA_OPTS
-CMD ["/bin/sh", "-c", "/app/wait-for-it.sh postgres:5432 --timeout=60 -- /app/wait-for-it.sh kafka:9092 --timeout=60 -- /app/wait-for-it.sh clickhouse:9000 --timeout=60 -- /app/wait-for-it.sh logstash:5002 --timeout=60 -- java $JAVA_OPTS -jar /app/app.jar"]
+CMD ["/bin/sh", "-c", "/app/wait-for-it.sh postgres:5432 --timeout=60 -- /app/wait-for-it.sh kafka:9092 --timeout=60 -- /app/wait-for-it.sh clickhouse:8123 --timeout=60 -- /app/wait-for-it.sh logstash:5002 --timeout=60 -- java $JAVA_OPTS -jar /app/app.jar"]

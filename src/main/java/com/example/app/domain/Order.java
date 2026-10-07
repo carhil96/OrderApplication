@@ -1,6 +1,6 @@
 package com.example.app.domain;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.time.Instant;
 import java.math.BigDecimal;
 

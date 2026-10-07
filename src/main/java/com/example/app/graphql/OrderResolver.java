@@ -1,21 +1,21 @@
 package com.example.app.graphql;
 
-import graphql.kickstart.tools.GraphQLMutationResolver;
-import graphql.kickstart.tools.GraphQLQueryResolver;
 import com.example.app.domain.Order;
 import com.example.app.repository.OrderRepository;
 import com.example.app.service.OrderService;
-import org.springframework.stereotype.Component;
+import org.springframework.graphql.data.method.annotation.Argument;
+import org.springframework.graphql.data.method.annotation.MutationMapping;
+import org.springframework.graphql.data.method.annotation.QueryMapping;
+import org.springframework.stereotype.Controller;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * GraphQL Resolver para operaciones de Order
- * Compatible con graphql-spring-boot-starter 11.1.0
+ * Adaptador GraphQL para operaciones de Order.
  */
-@Component
-public class OrderResolver implements GraphQLQueryResolver, GraphQLMutationResolver {
+@Controller
+public class OrderResolver {
 
   private final OrderRepository repo;
   private final OrderService service;
@@ -25,15 +25,18 @@ public class OrderResolver implements GraphQLQueryResolver, GraphQLMutationResol
     this.service = service;
   }
 
-    public List<Order> orders() {
-      return repo.findAll();
-    }
+  @QueryMapping
+  public List<Order> orders() {
+    return repo.findAll();
+  }
 
-    public Order orderById(Integer id) {
-      return repo.findById(id).orElse(null);
-    }
+  @QueryMapping
+  public Order orderById(@Argument Integer id) {
+    return repo.findById(id).orElse(null);
+  }
 
-  public Order createOrder(String customer, BigDecimal amount) {
+  @MutationMapping
+  public Order createOrder(@Argument String customer, @Argument BigDecimal amount) {
     Order o = new Order();
     o.setCustomer(customer);
     o.setAmount(amount);

@@ -16,7 +16,7 @@
     <writeTimeout>30 seconds</writeTimeout>
 
     <!-- Queue para evitar pérdida de logs -->
-    <queueSize>512</queueSize>
+    <ringBufferSize>512</ringBufferSize>
 
     <encoder class="net.logstash.logback.encoder.LogstashEncoder">
       <includeContext>true</includeContext>

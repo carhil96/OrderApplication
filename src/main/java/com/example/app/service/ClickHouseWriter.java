@@ -51,7 +51,7 @@ public class ClickHouseWriter {
 
         String url = System.getenv().getOrDefault(
                 "SPRING_CLICKHOUSE_URL",
-                "jdbc:clickhouse://clickhouse:9000/default"
+                "jdbc:clickhouse://localhost:8123/default"
         );
 
         try (Connection conn = DriverManager.getConnection(url)) {

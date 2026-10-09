@@ -18,6 +18,7 @@ public class OrderService {
   private final ClickHouseWriter clickHouseWriter;
   private final JsonMapper mapper;
 
+  /** Recibe los componentes necesarios para guardar y publicar pedidos. */
   public OrderService(OrderRepository repo, KafkaTemplate<String, String> kafka, ClickHouseWriter clickHouseWriter,
       JsonMapper mapper) {
     this.repo = repo;
@@ -26,6 +27,7 @@ public class OrderService {
     this.mapper = mapper;
   }
 
+  /** Guarda el pedido, publica su evento y lo encola para ClickHouse. */
   @Transactional
   public Order createOrder(Order order) {
     order.setStatus("CREATED");

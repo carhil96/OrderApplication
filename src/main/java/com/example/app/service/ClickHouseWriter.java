@@ -22,26 +22,19 @@ public class ClickHouseWriter {
 
     private final List<Order> buffer = new LinkedList<>();
 
-    /**
-     * Encola una orden para ser insertada en ClickHouse.
-     */
+    /** Añade un pedido al buffer que se enviará a ClickHouse. */
     public synchronized void enqueue(Order order) {
         buffer.add(order);
     }
 
-    /**
-     * Extrae y limpia el buffer de manera sincronizada.
-     */
+    /** Copia y vacía el buffer para procesar el lote fuera del bloqueo. */
     private synchronized List<Order> drain() {
         List<Order> copy = new LinkedList<>(buffer);
         buffer.clear();
         return copy;
     }
 
-    /**
-     * Método programado para hacer flush del buffer cada 5s,
-     * con inicial delay de 5s para asegurar que la app arranca correctamente.
-     */
+    /** Envía a ClickHouse cada cinco segundos los pedidos acumulados. */
     @Scheduled(fixedRate = 5000, initialDelay = 5000)
     public void flush() {
         List<Order> batch = drain();

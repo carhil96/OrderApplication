@@ -17,6 +17,7 @@ public class KafkaConfig {
   @Value("${kafka.bootstrap-servers:kafka:9092}")
   private String bootstrapServers;
 
+  /** Configura el productor Kafka con servidor y serializadores de texto. */
   @Bean
   public ProducerFactory<String, String> producerFactory() {
     Map<String, Object> props = new HashMap<>();
@@ -26,6 +27,7 @@ public class KafkaConfig {
     return new DefaultKafkaProducerFactory<>(props);
   }
 
+  /** Crea el cliente que envía mensajes a Kafka. */
   @Bean
   public KafkaTemplate<String, String> kafkaTemplate() {
     return new KafkaTemplate<>(producerFactory());

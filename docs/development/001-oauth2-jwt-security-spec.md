@@ -2,7 +2,7 @@
 
 ## Estado
 
-`en revisión`
+`cerrada — 2026-10-08`
 
 ## Problema y contexto
 
@@ -105,4 +105,154 @@ credenciales.
 - Elegir una versión de Keycloak compatible y mantenida antes de modificar
   Docker Compose.
 - La versión de Keycloak, el flujo de obtención de token, los roles y el alcance
-  de autorización siguen pendientes para la Fase 1 de esta iniciativa.
+  de autorización fueron definidos y autorizados en la Fase 1 (2026-10-07).
+
+## Diseño autorizado — Fase 1 (2026-10-07)
+
+- **Proveedor y entorno:** Keycloak `26.7.5`, con versión fijada en Docker
+  Compose y un realm importable para desarrollo local. El modo `start-dev` se
+  limita al entorno de desarrollo.
+- **Flujo de usuario:** OpenID Connect Authorization Code con PKCE. No se
+  habilitará Direct Access Grants (flujo de contraseña). Client Credentials
+  queda fuera del alcance inicial por no existir un consumidor máquina a
+  máquina definido.
+- **API:** Spring Security OAuth2 Resource Server, sin sesión, validando
+  firma, emisor y caducidad del access token JWT mediante la metadata/JWKS del
+  issuer de Keycloak. No se comparte una clave simétrica.
+- **Autoridades:** los roles del realm `ORDER_READ` y `ORDER_WRITE` se mapearán
+  a autoridades Spring equivalentes.
+- **Matriz de autorización:**
+
+  | Recurso | Permiso requerido |
+  | --- | --- |
+  | `GET /api/orders` | `ORDER_READ` |
+  | GraphQL `orders` y `orderById` | `ORDER_READ` |
+  | `POST /api/orders` | `ORDER_WRITE` |
+  | GraphQL `createOrder` | `ORDER_WRITE` |
+  | `/actuator/health` | Público para el healthcheck |
+  | Resto de Actuator | No expuesto |
+  | `/playground` (GraphiQL) | Deshabilitado en el perfil local protegido |
+
+- **Respuestas esperadas:** sin token o con token inválido, `401`; token
+  válido sin permiso suficiente, `403`.
+- **Criterios para las fases de implementación:** verificar ausencia/token
+  inválido, lectura autorizada, escritura autorizada, denegación por rol y
+  disponibilidad pública del healthcheck; documentar el recorrido de obtención
+  y uso de un token de prueba sin guardar credenciales reales.
+- **Limitaciones de entorno:** usuarios y credenciales serán únicamente de
+  demostración local; no se considera configuración de producción, persistencia
+  de identidad ni operación de alta disponibilidad.
+
+### Alternativas de flujo evaluadas
+
+- Authorization Code con PKCE: recomendado para clientes interactivos; evita
+  entregar la contraseña del usuario a un script cliente.
+- Direct Access Grants: descartado porque requiere enviar contraseña al cliente
+  y no es necesario para este recorrido.
+- Client Credentials: adecuado para clientes máquina a máquina, pero se difiere
+  hasta que exista ese consumidor y su matriz de permisos.
+
+### Decisiones autorizadas en Fase 1
+
+| Fecha | Decisión | Motivo | Autorización |
+| --- | --- | --- | --- |
+| 2026-10-07 | Reanudar la iniciativa y aprobar el diseño de la Fase 1. | Continuar tras completar la modernización de plataforma. | Usuario |
+| 2026-10-07 | Fijar Keycloak `26.7.5` para desarrollo local e importar un realm reproducible. | Versión publicada y entorno de demostración reproducible. | Usuario |
+| 2026-10-07 | Usar Authorization Code con PKCE; excluir Direct Access Grants y diferir Client Credentials. | Mantener un flujo interactivo apropiado y acotar la primera entrega. | Usuario |
+| 2026-10-07 | Definir `ORDER_READ`/`ORDER_WRITE` y la matriz de permisos de REST y GraphQL descrita arriba. | Separar explícitamente lectura y creación. | Usuario |
+| 2026-10-07 | Proteger GraphQL por operación, deshabilitar GraphiQL y dejar público solo `/actuator/health`. | Aplicar acceso mínimo y conservar el healthcheck. | Usuario |
+
+## Resultado de implementación — Fase 2 (2026-10-08)
+
+- La aplicación usa Spring Security OAuth2 Resource Server para Bearer JWT y
+  una cadena sin sesión.
+- `GET /api/orders/**` y `POST /api/orders/**` requieren autenticación; en esta
+  fase todavía no se aplican autoridades por operación.
+- `/graphql` requiere autenticación a nivel HTTP y las operaciones GraphQL se
+  autorizan mediante `ORDER_READ`/`ORDER_WRITE` como se describe en Fase 3.
+- `/actuator/health` permanece público; los demás paths no incluidos se deniegan.
+- El issuer se configura mediante `OAUTH2_ISSUER_URI`; puede proporcionarse
+  `OAUTH2_JWK_SET_URI` para configurar JWKS directamente. El issuer sigue siendo
+  validado junto con firma y caducidad estándar.
+- Verificación: la auditoría detectó que la primera versión solo probaba la
+  cadena HTTP con `JwtDecoder` simulado y no seguía TDD. La rectificación añadió
+  `JwtDecoderValidationTest`: se observó rojo al aceptar un issuer incorrecto,
+  se restauró el validador estándar y pasaron 4 pruebas Nimbus con clave RSA y
+  JWKS local. La suite dirigida completa pasó 11 pruebas (4 decoder, 5 HTTP,
+  2 GraphQL); `git diff --check` pasó.
+- Limitación: el servidor JWKS fue local y efímero; la autorización por roles
+  quedó cubierta en la Fase 3.
+
+## Resultado de implementación — Fase 3 (2026-10-08)
+
+- `SecurityConfiguration` mapea las autoridades del `realm_access.roles` de
+  Keycloak y exige `ORDER_READ` para GET REST y consultas GraphQL, y
+  `ORDER_WRITE` para POST REST y la mutación `createOrder`.
+- Los resolvers GraphQL aplican autorización por operación. GraphiQL quedó
+  deshabilitado; `/actuator/health` continúa público.
+- Compose incluye Keycloak `26.7.5` en modo desarrollo y el realm importable
+  `config/keycloak/orders-realm.json`. Incluye roles, usuarios de demostración
+  y cliente público `orders-cli` con Authorization Code + PKCE S256; Direct
+  Access Grants y service accounts están deshabilitados.
+- TDD: las pruebas de denegación se ejecutaron primero y fallaron en tres casos
+  de permisos; después de la implementación pasaron. La suite completa
+  `mvn -q test` pasó con 17 pruebas. La validación JSON del realm, `docker compose
+  config --quiet` y `git diff --check` pasaron.
+- Keycloak inició e importó `orders`; se comprobó discovery, issuer y JWKS con
+  firma RS256. Las pruebas de autorización inyectan claims `realm_access.roles`
+  en el contexto HTTP.
+- Validación manual de aceptación (2026-10-08), con el contenedor actualizado:
+  `reader` obtuvo token por Authorization Code + PKCE, pudo consultar REST
+  (`200`) y GraphQL (`data`), y recibió `403` en REST POST y `FORBIDDEN` en la
+  mutación GraphQL (`createOrder: null`). `writer` obtuvo token por el mismo
+  flujo, creó por REST (`200`, pedido id 7) y por GraphQL (`data.createOrder`,
+  sin errores).
+- Desviación detectada durante la validación: la primera prueba de `reader` se
+  ejecutó contra un contenedor de API creado 21 horas antes, con una imagen
+  anterior que aún no incorporaba la autorización por roles. Esa imagen aceptó
+  el POST y creó el pedido local id 6 `reader-denied`. Se reconstruyó y recreó
+  solo la API con `docker compose up -d --build app`; la aplicación quedó
+  saludable y las pruebas manuales posteriores confirmaron la política
+  autorizada. El pedido de prueba permanece en la base local.
+- La construcción Docker ejecuta `mvn clean package -DskipTests -U`; por ello
+  no se atribuye una nueva ejecución de la suite a ese build. La última suite
+  Maven registrada pasó con 17/17 pruebas; además, las verificaciones de roles
+  se hicieron contra Keycloak y la API con tokens reales.
+
+### Decisiones autorizadas en Fase 3
+
+| Fecha | Decisión | Motivo | Autorización |
+| --- | --- | --- | --- |
+| 2026-10-08 | Configurar Keycloak 26.7.5 en Compose con realm importable `orders`. | Entorno local reproducible para identidad y roles. | Usuario |
+| 2026-10-08 | Configurar cliente público `orders-cli` con Authorization Code + PKCE S256, sin Direct Access Grants ni service accounts. | Ajustarse al diseño OIDC aprobado y no habilitar flujos excluidos. | Usuario |
+| 2026-10-08 | Asignar `ORDER_READ` a `reader` y `ORDER_WRITE` a `writer`, y exigir esos roles según la matriz aprobada. | Separar lectura de creación en REST y GraphQL. | Usuario |
+
+## Resultado documental — Fase 4 (2026-10-08)
+
+- README describe el arranque de API y Keycloak, endpoints, identidades de
+  demostración, comprobación del issuer y obtención de access tokens con
+  Authorization Code + PKCE S256. Incluye ejemplos para permisos REST y
+  GraphQL y el healthcheck público.
+- La guía deja claro que `reader-dev-only` y `writer-dev-only` son credenciales
+  locales; los tokens se mantienen en variables temporales y no se versionan.
+- La prueba automatizada inicial de PKCE no pudo completar el callback del
+  navegador: Keycloak devolvió `cookie_not_found` al cliente HTTP de prueba. La
+  guía sí se completó después con un navegador real para `reader` y `writer`, y
+  se verificaron las respuestas REST y GraphQL de la matriz de autorización.
+- Diagnóstico del canje manual (2026-10-08): el realm no fijaba
+  `accessCodeLifespan`, cuyo valor predeterminado de Keycloak es un minuto. La
+  salida `Code already used` también puede representar un código que ya no está
+  disponible por caducidad. Por autorización del usuario, el timeout local se
+  fijó en 300 segundos tanto en el realm activo como en
+  `config/keycloak/orders-realm.json`. El ajuste activo se verificó por Admin
+  REST (`accessCodeLifespan: 300`). Con el timeout ampliado se obtuvieron tokens
+  reales para ambos usuarios y se completó la matriz de permisos manual.
+- Verificación de la fase documental: `mvn -q test` pasó (17 pruebas),
+  `docker compose config --quiet`, `jq empty config/keycloak/orders-realm.json`
+  y `git diff --check` terminaron correctamente.
+
+## Cierre de iniciativa — 2026-10-08
+
+El usuario aprobó formalmente el cierre. Las cuatro fases quedaron completadas;
+la verificación manual confirmó Authorization Code + PKCE y la matriz de
+permisos para `reader` y `writer`. La suite Maven registrada pasó 17/17 pruebas.

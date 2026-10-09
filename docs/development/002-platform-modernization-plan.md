@@ -6,11 +6,11 @@
 
 ## Estado general
 
-`aprobado`
+`en revisión retrospectiva TDD`
 
-La estrategia aprobada es Java 21 LTS, Spring Boot 3.5.x como puente técnico y
-Spring Boot 4.1.1 como destino. Cada fase de ejecución requiere autorización
-independiente.
+La estrategia aprobada fue Java 21 LTS, Spring Boot 3.5.x como puente técnico y
+Spring Boot 4.1.1 como destino. La auditoría no encontró evidencia TDD por fase;
+las fases de ejecución 2 a 5 están en revisión retrospectiva.
 
 ## Fases
 
@@ -37,7 +37,7 @@ independiente.
 
 ### Fase 2 — Java 21, Spring Boot 3.5 y GraphQL mantenido
 
-- Estado: `completada`
+- Estado: `en revisión`
 - Objetivo: actualizar el JDK, alcanzar un build/arranque estable en Boot 3.5.16
   y eliminar el bloqueo de GraphQL Java Kickstart para Jakarta.
 - Alcance: compilador Maven, Dockerfile, pipeline, `javax` a `jakarta`,
@@ -66,7 +66,7 @@ independiente.
 
 ### Fase 3 — ClickHouse y observabilidad compatibles
 
-- Estado: `completada`
+- Estado: `en revisión`
 - Objetivo: sustituir los adaptadores antiguos restantes antes del salto final.
 - Alcance: ClickHouse JDBC moderno, soporte PostgreSQL para Flyway y encoder
   Logstash compatible con Java 21.
@@ -99,7 +99,7 @@ independiente.
 
 ### Fase 4 — Salto final a Spring Boot 4.1.1 y Jackson 3
 
-- Estado: `completada`
+- Estado: `en revisión`
 - Objetivo: completar la migración a la plataforma destino.
 - Alcance: Boot 4.1.1, Spring Framework 7, Spring Security 7, Jackson 3 y
   ajustes de configuración/dependencias resultantes.
@@ -148,7 +148,7 @@ independiente.
 
 ### Fase 5 — Integración, documentación y preparación de seguridad
 
-- Estado: `completada`
+- Estado: `en revisión`
 - Objetivo: validar adaptadores restantes y preparar la reanudación de OAuth2/JWT.
 - Alcance: Kafka, ClickHouse, healthchecks, documentación y evidencia final.
 - Componentes previstos: configuración, Docker Compose, README y documentos de
@@ -177,5 +177,21 @@ independiente.
 
 ## Siguiente acción que requiere autorización
 
-Solicitar autorización explícita para reanudar la iniciativa 001 y ejecutar su
-Fase 1 de diseño OAuth2/JWT.
+Definir una secuencia de revalidación test-first para las fases 2 a 5. El historial
+disponible no permite reconstruir el orden original ni atribuir TDD
+retroactivamente; cada revalidación debe escribir una prueba de comportamiento,
+demostrar su fallo frente al comportamiento objetivo y luego verificar la
+implementación existente o corregirla. No comenzar esa revalidación sin acordar
+su alcance fase por fase.
+
+## Auditoría TDD retrospectiva — 2026-10-08
+
+La revisión del historial disponible no permite demostrar el ciclo prueba roja,
+implementación y prueba verde para ninguna fase de ejecución de esta iniciativa.
+El commit `940f0c9` agrupa los cambios de plataforma y las pruebas en un único
+commit; los resultados Maven y recorridos Docker documentan comportamiento
+posterior a la implementación, no el orden TDD. La Fase 1 fue de diseño, por lo
+que TDD no aplica. Las fases 2, 3, 4 y 5 pasan a `en revisión` hasta que se
+añada evidencia verificable de pruebas de comportamiento escritas y fallidas
+antes de sus implementaciones respectivas. No se afirma que los cambios estén
+incorrectos; la evidencia actual solo acredita validación posterior.

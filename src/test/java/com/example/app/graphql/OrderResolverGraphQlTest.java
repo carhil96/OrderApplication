@@ -27,6 +27,7 @@ class OrderResolverGraphQlTest {
   @MockitoBean
   private OrderService orderService;
 
+  /** Comprueba que la consulta GraphQL devuelve los pedidos existentes. */
   @Test
   void returnsOrdersThroughTheExistingQueryContract() {
     Order order = order("Ada", new BigDecimal("10.50"));
@@ -38,6 +39,7 @@ class OrderResolverGraphQlTest {
         .path("orders[0].status").matchesJson("\"CREATED\"");
   }
 
+  /** Comprueba que la mutación GraphQL crea y devuelve un pedido. */
   @Test
   void createsOrdersThroughTheExistingMutationContract() {
     when(orderService.createOrder(any(Order.class)))
@@ -53,6 +55,7 @@ class OrderResolverGraphQlTest {
         .path("createOrder.status").matchesJson("\"CREATED\"");
   }
 
+  /** Construye un pedido de ejemplo para las pruebas GraphQL. */
   private Order order(String customer, BigDecimal amount) {
     Order order = new Order();
     order.setCustomer(customer);

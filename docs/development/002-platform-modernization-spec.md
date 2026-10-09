@@ -18,7 +18,10 @@ entorno Docker Compose.
 
 ## Estado de ejecución
 
-Las fases 1 a 5 están completadas. El proyecto usa Java 21 en Docker, Spring
+La implementación de las fases 1 a 5 se realizó. En la auditoría del 2026-10-08
+se confirmó que el historial disponible no demuestra TDD para las fases con
+código (2 a 5); por eso esas fases están en revisión retrospectiva en el plan.
+El proyecto usa Java 21 en Docker, Spring
 Boot 4.1.1, Spring Framework 7, Jackson 3 y PostgreSQL 17.11. La aplicación
 conserva REST, GraphQL, persistencia, Kafka, ClickHouse y healthcheck según
 pruebas Maven y verificación integrada de Docker Compose. El README contiene

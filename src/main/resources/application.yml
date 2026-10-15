@@ -46,7 +46,7 @@ spring:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      enable-auto-commit: true
+      enable-auto-commit: false
       properties:
         session.timeout.ms: 30000
         request.timeout.ms: 30000
@@ -66,6 +66,7 @@ server:
 
 kafka:
   bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  topic: ${KAFKA_TOPIC:orders-topic}
 
 graphql:
   path: /graphql

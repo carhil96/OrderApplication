@@ -1,72 +1,83 @@
 package com.example.app.service;
 
-import com.example.app.domain.Order;
+import com.example.app.dto.OrderEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
 
+/** Persiste en ClickHouse una copia de cada pedido procesado desde Kafka. */
 @Component
 public class ClickHouseWriter {
 
     private static final Logger log = LoggerFactory.getLogger(ClickHouseWriter.class);
+    private static final String INSERT_SQL = "INSERT INTO %s "
+            + "(id, customer, amount, status, created_at) "
+            + "SETTINGS insert_deduplicate = 1, insert_deduplication_token = '%s' "
+            + "VALUES (?, ?, ?, ?, ?)";
+    private static final String ENABLE_DEDUPLICATION_SQL = "ALTER TABLE %s "
+            + "MODIFY SETTING non_replicated_deduplication_window = 10000";
+    private final String jdbcUrl;
+    private final String tableName;
+    private volatile boolean deduplicationEnabled;
 
-    private final List<Order> buffer = new LinkedList<>();
-
-    /** Añade un pedido al buffer que se enviará a ClickHouse. */
-    public synchronized void enqueue(Order order) {
-        buffer.add(order);
+    public ClickHouseWriter() {
+        this(System.getenv().getOrDefault(
+                        "SPRING_CLICKHOUSE_URL",
+                        "jdbc:clickhouse://localhost:8123/default"),
+                "default.orders");
     }
 
-    /** Copia y vacía el buffer para procesar el lote fuera del bloqueo. */
-    private synchronized List<Order> drain() {
-        List<Order> copy = new LinkedList<>(buffer);
-        buffer.clear();
-        return copy;
+    ClickHouseWriter(String jdbcUrl, String tableName) {
+        if (!tableName.matches("[A-Za-z0-9_]+\\.[A-Za-z0-9_]+")) {
+            throw new IllegalArgumentException("Invalid ClickHouse table name: " + tableName);
+        }
+        this.jdbcUrl = jdbcUrl;
+        this.tableName = tableName;
     }
 
-    /** Envía a ClickHouse cada cinco segundos los pedidos acumulados. */
-    @Scheduled(fixedRate = 5000, initialDelay = 5000)
-    public void flush() {
-        List<Order> batch = drain();
-        if (batch.isEmpty()) {
+    /** Inserta un evento con un token estable para reconocer sus reintentos. */
+    public void persist(OrderEvent event) {
+        String token = "order-" + event.getId();
+        String sql = INSERT_SQL.formatted(tableName, token);
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl)) {
+            enableDeduplicationIfNeeded(connection);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setInt(1, event.getId());
+                statement.setString(2, event.getCustomer());
+                statement.setBigDecimal(3, event.getAmount());
+                statement.setString(4, event.getStatus());
+                statement.setTimestamp(5, Timestamp.from(
+                        event.getCreatedAt() != null ? event.getCreatedAt() : Instant.now()));
+                statement.executeUpdate();
+                log.info("Persisted order {} to ClickHouse", event.getId());
+            }
+        } catch (SQLException e) {
+            throw new ClickHousePersistenceException(
+                    "Could not persist order " + event.getId() + " to ClickHouse", e);
+        }
+    }
+
+    private void enableDeduplicationIfNeeded(Connection connection) throws SQLException {
+        if (deduplicationEnabled) {
             return;
         }
-
-        String url = System.getenv().getOrDefault(
-                "SPRING_CLICKHOUSE_URL",
-                "jdbc:clickhouse://localhost:8123/default"
-        );
-
-        try (Connection conn = DriverManager.getConnection(url)) {
-            String sql = "INSERT INTO orders (id, customer, amount, status, created_at) VALUES (?, ?, ?, ?, ?)";
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                for (Order o : batch) {
-                    ps.setInt(1, o.getId() != null ? o.getId() : 0);
-                    ps.setString(2, o.getCustomer() != null ? o.getCustomer() : "UNKNOWN");
-                    ps.setBigDecimal(3, o.getAmount() != null ? o.getAmount() : BigDecimal.valueOf(0.0));
-                    ps.setString(4, o.getStatus() != null ? o.getStatus() : "CREATED");
-                    ps.setObject(5, o.getCreatedAt() != null ? o.getCreatedAt() : Instant.now());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
+        synchronized (this) {
+            if (deduplicationEnabled) {
+                return;
             }
-
-            log.info("Flushed {} orders to ClickHouse", Optional.of(batch.size()));
-
-        } catch (Exception e) {
-            // No lanzamos la excepción: simplemente loggeamos y el buffer ya está limpio
-            log.error("Error writing to ClickHouse, orders lost: {}", Optional.of(batch.size()), e);
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(ENABLE_DEDUPLICATION_SQL.formatted(tableName));
+            }
+            deduplicationEnabled = true;
         }
     }
 }

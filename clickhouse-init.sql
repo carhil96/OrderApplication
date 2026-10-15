@@ -7,4 +7,5 @@ CREATE TABLE IF NOT EXISTS default.orders (
     status String,
     created_at DateTime
 ) ENGINE = MergeTree()
-ORDER BY (id, created_at);
+ORDER BY (id, created_at)
+SETTINGS non_replicated_deduplication_window = 10000;

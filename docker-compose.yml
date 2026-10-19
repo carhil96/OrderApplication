@@ -125,40 +125,6 @@ services:
     volumes:
       - ./config/keycloak:/opt/keycloak/data/import:ro
 
-  app:
-    build: .
-    image: java-microservice-example:latest
-    ports:
-      - 8080:8080
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/appdb
-      SPRING_DATASOURCE_USERNAME: app
-      SPRING_DATASOURCE_PASSWORD: password
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_LOGSTASH_HOST: logstash
-      SPRING_LOGSTASH_PORT: 5002
-      SPRING_CLICKHOUSE_URL: jdbc:clickhouse://clickhouse:8123/default
-      OAUTH2_ISSUER_URI: http://localhost:8180/realms/orders
-      OAUTH2_JWK_SET_URI: http://keycloak:8080/realms/orders/protocol/openid-connect/certs
-      JAVA_OPTS: "-Xms512m -Xmx1024m"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      clickhouse:
-        condition: service_healthy
-      logstash:
-        condition: service_healthy
-      keycloak:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-      start_period: 60s
 
 volumes:
   postgres_data:

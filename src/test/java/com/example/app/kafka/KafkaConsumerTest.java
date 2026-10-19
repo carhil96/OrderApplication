@@ -1,6 +1,7 @@
 package com.example.app.kafka;
 
 import com.example.app.dto.OrderEvent;
+import com.example.app.exception.InvalidOrderEventException;
 import com.example.app.service.ClickHouseWriter;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;

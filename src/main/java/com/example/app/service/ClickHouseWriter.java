@@ -1,6 +1,7 @@
 package com.example.app.service;
 
 import com.example.app.dto.OrderEvent;
+import com.example.app.exception.ClickHousePersistenceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

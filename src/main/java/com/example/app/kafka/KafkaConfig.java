@@ -1,5 +1,6 @@
 package com.example.app.kafka;
 
+import com.example.app.exception.InvalidOrderEventException;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;

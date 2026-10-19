@@ -134,13 +134,13 @@ ser coherente para que el comportamiento esperado quede cubierto.
   tras la implementación, las pruebas unitarias cubren token estable, evento
   completo, persistencia sincrónica PostgreSQL, compatibilidad con eventos
   antiguos, evento inválido y propagación de errores.
-- Evidencia: `mvn -q -Dmaven.repo.local=/private/tmp/orderapplication-m2 test`
-  pasó con 22 pruebas y una prueba de integración opcional omitida. La prueba de
-  integración se ejecutó aparte con
-  `mvn -q -Dmaven.repo.local=/private/tmp/orderapplication-m2 -Dclickhouse.integration=true -Dtest=ClickHouseWriterIntegrationTest test`;
-  dos inserciones del mismo evento vía ClickHouse JDBC 0.10.0 contra ClickHouse
-  23.8 dejaron una sola fila en una tabla temporal que el test eliminó.
-  `git diff --check` pasó.
+- La prueba de integración usa Testcontainers para iniciar ClickHouse 23.8 y
+  ahora forma parte de la suite normal; requiere Docker disponible durante la
+  ejecución. Comprueba que dos inserciones del mismo evento vía ClickHouse JDBC
+  0.10.0 dejan una sola fila en una tabla temporal, que el test elimina.
+- Evidencia: el usuario confirmó que la prueba funciona correctamente al correr
+  la suite completa. Antes de incorporar Testcontainers, la suite omitía esta
+  prueba y se ejecutaba aparte mediante una propiedad del sistema.
 - No se hizo una prueba integrada que publique por un broker Kafka real y
   consuma hasta ClickHouse. La configuración del listener y la propagación de
   errores se verificaron por compilación y pruebas unitarias.

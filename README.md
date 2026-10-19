@@ -13,32 +13,42 @@ los logs.
 
 ## Arranque local
 
-Desde la raíz del repositorio:
+Desde la raíz de `OrderApplication`, inicia solo la infraestructura:
 
 ```sh
-docker compose up -d --build
+docker compose up -d
 docker compose ps
 ```
 
-Compose levanta PostgreSQL 17.11, Kafka, Kafbat UI, ClickHouse, ELK, Keycloak
-26.7.5 y la API. Keycloak importa el realm local `orders` al primer arranque.
-Kafbat UI se conecta al listener interno de Kafka y permite explorar el cluster
-local. La base de datos de pedidos usa el volumen persistente `postgres_data`.
-Para parar los contenedores conservando los datos:
+Compose levanta PostgreSQL 17.11, Kafka, Kafbat UI, ClickHouse, ELK y Keycloak
+26.7.5. Keycloak importa el realm local `orders` al primer arranque. La base de
+datos de pedidos usa el volumen persistente `postgres_data`.
+
+Después ejecuta las APIs desde IntelliJ:
+
+1. Ejecuta OrderApplication. Su único archivo de configuración es
+   `src/main/resources/application.yml`; escucha en `8082` y usa Keycloak en
+   `localhost:8180` y Kafka en `localhost:29092` por defecto.
+2. Ejecuta ApiGateway desde su proyecto. Escucha en `8080` y enruta REST y
+   GraphQL a OrderApplication en `localhost:8082`.
+
+Para parar los contenedores de infraestructura conservando los datos:
 
 ```sh
 docker compose down
 ```
 
-No uses `docker compose down -v` si quieres conservar ese volumen.
+No uses `docker compose down -v` si quieres conservar el volumen de PostgreSQL.
 
 ## Endpoints locales
 
 | Servicio | URL |
 | --- | --- |
-| REST pedidos | `http://localhost:8080/api/orders` |
-| GraphQL | `http://localhost:8080/graphql` |
-| Salud | `http://localhost:8080/actuator/health` |
+| REST pedidos por Gateway | `http://localhost:8080/api/orders` |
+| GraphQL por Gateway | `http://localhost:8080/graphql` |
+| OrderApplication directo (desarrollo/diagnóstico) | `http://localhost:8082` |
+| Health de OrderApplication | `http://localhost:8082/actuator/health` |
+| Health del Gateway | `http://localhost:8080/actuator/health` |
 | Keycloak | `http://localhost:8180` |
 | Realm OIDC | `http://localhost:8180/realms/orders` |
 | Kafbat UI | `http://localhost:8081` |
@@ -47,10 +57,11 @@ No uses `docker compose down -v` si quieres conservar ese volumen.
 | Elasticsearch | `http://localhost:9200` |
 | Kibana | `http://localhost:5601` |
 
-La API ofrece `GET /api/orders`, `POST /api/orders`, las consultas GraphQL
+OrderApplication ofrece `GET /api/orders`, `POST /api/orders`, las consultas GraphQL
 `orders` y `orderById`, y la mutación `createOrder`. REST y GraphQL requieren un
-access token JWT de Keycloak. `/actuator/health` permanece público para el
-healthcheck; GraphiQL está deshabilitado.
+access token JWT de Keycloak. Los clientes deben entrar por el Gateway en
+`8080`; OrderApplication también valida JWT si se accede directamente a `8082`.
+El health de ambos servicios permanece público; GraphiQL está deshabilitado.
 
 ### Permisos de demostración
 
@@ -158,22 +169,24 @@ respuesta. `/actuator/health` responde sin token.
 mvn -B test
 ```
 
-La compilación requiere Java 21. Docker construye la imagen con Maven y
-Temurin 21.
+La compilación requiere Java 21 y Maven 3.9+. Las APIs se ejecutan desde
+IntelliJ; Docker Compose solo levanta la infraestructura local.
 
 ## Recorrido de pedidos y servicios auxiliares
 
-Con Compose levantado, crea un pedido:
+Con la infraestructura y ambas APIs levantadas, y un token de `writer` en
+`$ACCESS_TOKEN`, crea un pedido a través del Gateway:
 
 ```sh
 curl -fsS -X POST http://localhost:8080/api/orders \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"customer":"smoke-local","amount":12.50}'
 ```
 
 Comprueba la salud con `curl -fsS http://localhost:8080/actuator/health`. El
-evento aparece en los logs de la aplicación (`docker compose logs app`) y el
-pedido se copia a ClickHouse en un máximo aproximado de cinco segundos:
+evento aparece en la consola de OrderApplication en IntelliJ y el pedido se
+copia a ClickHouse en un máximo aproximado de cinco segundos:
 
 ```sh
 curl -fsS --data-binary "SELECT id, customer, amount, status FROM orders WHERE customer = 'smoke-local' FORMAT JSONEachRow" http://localhost:8123/

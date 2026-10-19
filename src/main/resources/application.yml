@@ -5,8 +5,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${OAUTH2_ISSUER_URI:}
-          jwk-set-uri: ${OAUTH2_JWK_SET_URI:}
+          issuer-uri: ${OAUTH2_ISSUER_URI:http://localhost:8180/realms/orders}
+          jwk-set-uri: ${OAUTH2_JWK_SET_URI:http://localhost:8180/realms/orders/protocol/openid-connect/certs}
   graphql:
     graphiql:
       enabled: false
@@ -40,7 +40,7 @@ spring:
     out-of-order: false
 
   kafka:
-    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     consumer:
       group-id: orders-group
       auto-offset-reset: earliest
@@ -59,13 +59,13 @@ spring:
         max.request.size: 1048576
 
 server:
-  port: 8080
+  port: 8082
   shutdown: graceful
   tomcat:
     connection-timeout: 20000
 
 kafka:
-  bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+  bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
   topic: ${KAFKA_TOPIC:orders-topic}
 
 graphql:

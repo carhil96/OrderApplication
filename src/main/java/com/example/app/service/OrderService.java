@@ -11,6 +11,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+
 @Service
 public class OrderService {
   private static final Logger log = LoggerFactory.getLogger(OrderService.class);
@@ -49,5 +52,11 @@ public class OrderService {
     }
 
     return saved;
+  }
+
+  /** Devuelve el promedio de los importes de pedidos creados en [from, to). */
+  @Transactional(readOnly = true)
+  public BigDecimal averageAmountCreatedBetween(Instant from, Instant to) {
+    return repo.averageAmountCreatedBetween(from, to);
   }
 }

@@ -14,6 +14,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -100,6 +101,46 @@ class SecurityConfigurationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"customer\":\"Ada\",\"amount\":10.50}"))
         .andExpect(status().isOk());
+  }
+
+  /** Confirma que ORDER_READ puede solicitar el promedio mediante POST. */
+  @Test
+  void allowsAverageRequestForReadRole() throws Exception {
+    stubToken("read-token", "ORDER_READ");
+    when(orderService.averageAmountCreatedBetween(
+        Instant.parse("2026-10-01T00:00:00Z"), Instant.parse("2026-11-01T00:00:00Z")))
+        .thenReturn(new BigDecimal("17.25"));
+
+    mockMvc.perform(post("/api/orders/average-amount")
+            .header("Authorization", "Bearer read-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-11-01T00:00:00Z\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.averageAmount").value(17.25));
+  }
+
+  /** Confirma que ORDER_WRITE sin ORDER_READ no puede consultar el promedio. */
+  @Test
+  void rejectsAverageRequestForWriteOnlyRole() throws Exception {
+    stubToken("write-token", "ORDER_WRITE");
+
+    mockMvc.perform(post("/api/orders/average-amount")
+            .header("Authorization", "Bearer write-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"from\":\"2026-10-01T00:00:00Z\",\"to\":\"2026-11-01T00:00:00Z\"}"))
+        .andExpect(status().isForbidden());
+  }
+
+  /** Confirma que el endpoint rechaza un intervalo vacío o invertido. */
+  @Test
+  void rejectsInvalidAverageRange() throws Exception {
+    stubToken("read-token", "ORDER_READ");
+
+    mockMvc.perform(post("/api/orders/average-amount")
+            .header("Authorization", "Bearer read-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"from\":\"2026-11-01T00:00:00Z\",\"to\":\"2026-10-01T00:00:00Z\"}"))
+        .andExpect(status().isBadRequest());
   }
 
   /** Confirma que un usuario con ORDER_READ puede consultar pedidos por GraphQL. */

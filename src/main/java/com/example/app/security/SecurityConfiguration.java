@@ -40,6 +40,7 @@ public class SecurityConfiguration {
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers("/actuator/health").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAuthority("ORDER_READ")
+            .requestMatchers(HttpMethod.POST, "/api/orders/average-amount").hasAuthority("ORDER_READ")
             .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAuthority("ORDER_WRITE")
             .requestMatchers("/api/orders/**", "/graphql").authenticated()
             .anyRequest().denyAll())

@@ -57,6 +57,8 @@ spring:
       retries: 3
       properties:
         max.request.size: 1048576
+    listener:
+      ack-mode: record
 
 server:
   port: 8082
@@ -67,6 +69,9 @@ server:
 kafka:
   bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
   topic: ${KAFKA_TOPIC:orders-topic}
+  outbox:
+    order-topic: ${KAFKA_ORDER_OUTBOX_TOPIC:outbox.event.order}
+    customer-topic: ${KAFKA_CUSTOMER_OUTBOX_TOPIC:outbox.event.customer}
 
 graphql:
   path: /graphql

@@ -1,7 +1,9 @@
 package com.example.app.security;
 
 import com.example.app.repository.OrderRepository;
+import com.example.app.domain.Customer;
 import com.example.app.domain.Order;
+import com.example.app.service.CustomerService;
 import com.example.app.service.OrderService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +13,14 @@ import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.Instant;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
@@ -37,6 +41,9 @@ class SecurityConfigurationTest {
 
   @MockitoBean
   private OrderService orderService;
+
+  @MockitoBean
+  private CustomerService customerService;
 
   @MockitoBean
   private OrderRepository orderRepository;
@@ -180,6 +187,55 @@ class SecurityConfigurationTest {
             .header("Authorization", "Bearer write-token")
             .contentType(MediaType.APPLICATION_JSON)
             .content("{\"query\":\"mutation { createOrder(customer: \\\"Ada\\\", amount: 10.50) { customer } }\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.errors").doesNotExist());
+  }
+
+  /** Confirma que ORDER_READ permite consultar clientes por GraphQL. */
+  @Test
+  void allowsGraphQlCustomerQueryForReadRole() throws Exception {
+    stubToken("read-token", "ORDER_READ");
+    Customer customer = new Customer("Ada");
+    ReflectionTestUtils.setField(customer, "id", 21L);
+    Order order = new Order();
+    order.setCustomerRecord(customer);
+    order.setId(51);
+    order.setAmount(new BigDecimal("10.50"));
+    when(customerService.findAll()).thenReturn(List.of(customer));
+    when(orderService.findOrdersByCustomerIds(Set.of(21L))).thenReturn(Map.of(21L, List.of(order)));
+
+    mockMvc.perform(post("/graphql")
+            .header("Authorization", "Bearer read-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"query\":\"{ customers { id name orders { id amount } } }\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.errors").doesNotExist())
+        .andExpect(jsonPath("$.data.customers[0].orders[0].amount").value(10.5));
+  }
+
+  /** Confirma que ORDER_READ no permite crear clientes por GraphQL. */
+  @Test
+  void rejectsGraphQlCustomerCreationForReadOnlyRole() throws Exception {
+    stubToken("read-token", "ORDER_READ");
+
+    mockMvc.perform(post("/graphql")
+            .header("Authorization", "Bearer read-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"query\":\"mutation { createCustomer(name: \\\"Ada\\\") { id name } }\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.errors").exists());
+  }
+
+  /** Confirma que ORDER_WRITE permite crear clientes por GraphQL. */
+  @Test
+  void allowsGraphQlCustomerCreationForWriteRole() throws Exception {
+    stubToken("write-token", "ORDER_WRITE");
+    when(customerService.create("Ada")).thenReturn(new com.example.app.domain.Customer("Ada"));
+
+    mockMvc.perform(post("/graphql")
+            .header("Authorization", "Bearer write-token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"query\":\"mutation { createCustomer(name: \\\"Ada\\\") { name } }\"}"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.errors").doesNotExist());
   }

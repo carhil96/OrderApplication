@@ -17,3 +17,6 @@ buildNumber.properties
 .classpath
 .idea
 .env
+
+# Dumps locales de bases de datos pueden contener datos reales.
+/respaldos/

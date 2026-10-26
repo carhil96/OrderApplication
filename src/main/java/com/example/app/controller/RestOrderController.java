@@ -3,7 +3,6 @@ package com.example.app.controller;
 import com.example.app.domain.Order;
 import com.example.app.dto.OrderAverageRequest;
 import com.example.app.dto.OrderAverageResponse;
-import com.example.app.repository.OrderRepository;
 import com.example.app.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
@@ -16,12 +15,10 @@ import java.util.List;
 @RequestMapping("/api/orders")
 public class RestOrderController {
   private final OrderService orderService;
-  private final OrderRepository repository;
 
   /** Recibe los servicios que necesita el controlador para crear y consultar pedidos. */
-  public RestOrderController(OrderService orderService, OrderRepository repository) {
+  public RestOrderController(OrderService orderService) {
     this.orderService = orderService;
-    this.repository = repository;
   }
 
   /** Crea un pedido y devuelve el pedido guardado. */
@@ -34,7 +31,7 @@ public class RestOrderController {
   /** Devuelve todos los pedidos guardados. */
   @GetMapping
   public List<Order> list() {
-    return repository.findAll();
+    return orderService.findAll();
   }
 
   /** Calcula el promedio de los importes en el intervalo [from, to). */

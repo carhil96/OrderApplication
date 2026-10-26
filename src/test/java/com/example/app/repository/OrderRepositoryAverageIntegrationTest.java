@@ -55,8 +55,12 @@ class OrderRepositoryAverageIntegrationTest {
   }
 
   private void insertOrder(String amount, Instant createdAt) {
+    jdbcTemplate.update("INSERT INTO customers(name) VALUES (?) ON CONFLICT(name) DO NOTHING",
+        "average-integration-test");
+    Long customerId = jdbcTemplate.queryForObject(
+        "SELECT id FROM customers WHERE name = ?", Long.class, "average-integration-test");
     jdbcTemplate.update(
-        "INSERT INTO orders (customer, amount, status, created_at) VALUES (?, ?, ?, ?)",
-        "average-integration-test", new BigDecimal(amount), "CREATED", Timestamp.from(createdAt));
+        "INSERT INTO orders (customer_id, amount, status, created_at, status_order) VALUES (?, ?, ?, ?, ?)",
+        customerId, new BigDecimal(amount), "CREATED", Timestamp.from(createdAt), Timestamp.from(createdAt));
   }
 }

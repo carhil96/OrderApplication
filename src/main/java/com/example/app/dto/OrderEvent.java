@@ -9,6 +9,7 @@ public class OrderEvent {
   private BigDecimal amount;
   private String status;
   private Instant createdAt;
+  private Instant statusOrder;
 
   /** Constructor vacío usado al convertir el evento desde o hacia JSON. */
   public OrderEvent() {}
@@ -20,11 +21,17 @@ public class OrderEvent {
 
   /** Crea un evento con todos los datos necesarios para la copia analítica. */
   public OrderEvent(Integer id, String customer, BigDecimal amount, String status, Instant createdAt) {
+    this(id, customer, amount, status, createdAt, createdAt);
+  }
+
+  public OrderEvent(Integer id, String customer, BigDecimal amount, String status, Instant createdAt,
+      Instant statusOrder) {
     this.id = id;
     this.customer = customer;
     this.amount = amount;
     this.status = status;
     this.createdAt = createdAt;
+    this.statusOrder = statusOrder;
   }
 
   /** Devuelve el identificador del pedido del evento. */
@@ -47,4 +54,6 @@ public class OrderEvent {
   public Instant getCreatedAt() { return createdAt; }
   /** Actualiza la fecha de creación del pedido. */
   public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+  public Instant getStatusOrder() { return statusOrder; }
+  public void setStatusOrder(Instant statusOrder) { this.statusOrder = statusOrder; }
 }

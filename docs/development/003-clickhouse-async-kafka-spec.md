@@ -126,7 +126,7 @@ ser coherente para que el comportamiento esperado quede cubierto.
   `insert_deduplicate = 1` y un token `order-<id>`. Antes de su primera
   inserción, aplica `ALTER TABLE ... MODIFY SETTING` con ventana de 10.000
   bloques; la creación de tablas nuevas incluye el mismo ajuste en
-  `clickhouse-init.sql`.
+  `src/main/resources/clickhouse/init.sql`.
 - La configuración desactiva auto commit. Los fallos de ClickHouse se propagan
   y se reintentan con espera exponencial sin límite; eventos inválidos se
   publican en `<topic>.DLT`.

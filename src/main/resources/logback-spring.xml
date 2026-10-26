@@ -19,6 +19,7 @@
     <ringBufferSize>512</ringBufferSize>
 
     <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+      <customFields>{"service":"order-application"}</customFields>
       <includeContext>true</includeContext>
       <includeMdc>true</includeMdc>
     </encoder>

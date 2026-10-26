@@ -1,16 +1,34 @@
+enum OrderStatus {
+  CREATED
+  DELIVERED
+}
+
+type Customer {
+  id: ID!
+  name: String!
+  orders: [Order!]!
+}
+
 type Order {
   id: ID!
   customer: String
   amount: Float
   status: String
   createdAt: String
+  statusOrder: String
 }
 
 type Query {
+  customers: [Customer!]!
+  customerById(id: ID!): Customer
   orders: [Order]
   orderById(id: ID!): Order
 }
 
 type Mutation {
-  createOrder(customer: String!, amount: Float!): Order
+  createCustomer(name: String!): Customer!
+  updateCustomerName(id: ID!, name: String!): Customer!
+  deleteCustomer(id: ID!): Boolean!
+  createOrder(customer: String!, amount: Float!): Order!
+  updateOrderStatus(id: ID!, status: OrderStatus!): Order!
 }

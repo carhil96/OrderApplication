@@ -29,7 +29,7 @@ El diseño detallado y la implementación quedaron completados y documentados el
   23.8; errores de ClickHouse y manejo de offsets Kafka (pendientes de la fase 2).
 - Riesgos: ventana finita; diferencias del controlador JDBC; eventos inválidos.
 - Condición de cierre: diseño aprobado por el usuario.
-- Resultado y evidencia: inspección de `clickhouse-init.sql`,
+- Resultado y evidencia: inspección de `src/main/resources/clickhouse/init.sql`,
   `docker-compose.yml`, entidades/eventos, consumidor y configuración Kafka.
   ClickHouse 23.8 soporta tokens personalizados (disponibles desde 22.2), pero
   la tabla actual es `MergeTree` no replicada y necesita una ventana de

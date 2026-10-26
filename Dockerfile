@@ -13,15 +13,8 @@ RUN mvn clean package -DskipTests -U
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 
-# Instalar netcat-openbsd para wait-for-it.sh
-RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*
-
 # Copia jar construido
 COPY --from=build /app/target/java-microservice-example-0.1.0.jar app.jar
 
-# Copia wait-for-it script
-COPY wait-for-it.sh /app/wait-for-it.sh
-RUN chmod +x /app/wait-for-it.sh
-
-# Comando de arranque usando wait-for-it con JAVA_OPTS
-CMD ["/bin/sh", "-c", "/app/wait-for-it.sh postgres:5432 --timeout=60 -- /app/wait-for-it.sh kafka:9092 --timeout=60 -- /app/wait-for-it.sh clickhouse:8123 --timeout=60 -- /app/wait-for-it.sh logstash:5002 --timeout=60 -- java $JAVA_OPTS -jar /app/app.jar"]
+# Inicia la aplicación; JAVA_OPTS es opcional y se expande mediante el shell.
+CMD ["/bin/sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]

@@ -1,5 +1,6 @@
 package com.example.app.security;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +39,9 @@ public class SecurityConfiguration {
         .csrf(csrf -> csrf.disable())
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(authorize -> authorize
+            .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
             .requestMatchers("/actuator/health").permitAll()
+            .requestMatchers("/actuator/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/orders/**").hasAuthority("ORDER_READ")
             .requestMatchers(HttpMethod.POST, "/api/orders/average-amount").hasAuthority("ORDER_READ")
             .requestMatchers(HttpMethod.POST, "/api/orders/**").hasAuthority("ORDER_WRITE")

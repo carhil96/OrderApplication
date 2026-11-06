@@ -57,6 +57,13 @@ No uses `docker compose down -v` si quieres conservar el volumen de PostgreSQL.
 | Elasticsearch | `http://localhost:9200` |
 | Kibana | `http://localhost:5601` |
 
+### Wallboard de Spring Boot Admin
+
+El wallboard Spring Boot Admin vive en el proyecto independiente
+`SpringBootWallboard`. Consulta su README para iniciarlo y registrar servicios.
+OrderApplication publica `health`, `info` y `metrics` para el wallboard; en AWS
+limita `/actuator/**` al tráfico interno autorizado mediante security groups.
+
 OrderApplication ofrece `GET /api/orders`, `POST /api/orders` y una API GraphQL
 para Customer y Order. GraphQL permite consultar clientes y pedidos, recorrer
 `Customer.orders`, crear/renombrar/borrar clientes (si no tienen pedidos), crear

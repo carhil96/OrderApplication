@@ -1,6 +1,14 @@
 spring:
   application:
     name: java-microservice-example
+  boot:
+    admin:
+      client:
+        enabled: ${SPRING_BOOT_ADMIN_CLIENT_ENABLED:false}
+        url: ${SPRING_BOOT_ADMIN_CLIENT_URL:http://localhost:8085}
+        instance:
+          service-host-type: IP
+          name: ${spring.application.name}
   security:
     oauth2:
       resourceserver:
@@ -92,7 +100,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized

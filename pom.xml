@@ -100,6 +100,13 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Registro de OrderApplication en el wallboard de Spring Boot Admin -->
+        <dependency>
+            <groupId>de.codecentric</groupId>
+            <artifactId>spring-boot-admin-starter-client</artifactId>
+            <version>4.1.4</version>
+        </dependency>
+
         <!-- OAuth2 Resource Server: JWT Bearer validation -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

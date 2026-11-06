@@ -8,7 +8,9 @@ import com.example.app.repository.OutboxRepository;
 import com.example.app.repository.OrderRepository;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.server.ResponseStatusException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
@@ -20,8 +22,10 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -79,6 +83,26 @@ class OrderServiceTest {
     verify(repository).save(order);
     verify(entityManager).flush();
     verify(outbox).save(any(OutboxEvent.class));
+  }
+
+  @Test
+  void rejectsOrderWithUnknownCustomerAsBadRequest() {
+    OrderRepository repository = mock(OrderRepository.class);
+    CustomerRepository customers = mock(CustomerRepository.class);
+    OutboxRepository outbox = mock(OutboxRepository.class);
+    JsonMapper mapper = mock(JsonMapper.class);
+    EntityManager entityManager = mock(EntityManager.class);
+    Order order = new Order();
+    order.setCustomer("Missing Customer");
+    when(customers.findByName("Missing Customer")).thenReturn(Optional.empty());
+    OrderService service = new OrderService(repository, customers, outbox, mapper, entityManager);
+
+    ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+        () -> service.createOrder(order));
+
+    assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    assertEquals("customer does not exist", exception.getReason());
+    verify(repository, never()).save(any(Order.class));
   }
 
   private Customer customer(Long id, String name) {

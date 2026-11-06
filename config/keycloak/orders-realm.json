@@ -20,7 +20,7 @@
       "implicitFlowEnabled": false,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["http://localhost/*"],
+      "redirectUris": ["http://localhost/*", "https://oauth.pstmn.io/v1/browser-callback"],
       "webOrigins": ["http://localhost"],
       "attributes": {
         "pkce.code.challenge.method": "S256"

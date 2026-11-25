@@ -8,9 +8,14 @@ pipeline {
       }
     }
 
-    stage('Tests (excluding integration tests)') {
+    stage('Tests (excluding ClickHouse Testcontainers)') {
+      environment {
+        SPRING_DATASOURCE_URL = 'jdbc:postgresql://postgres-ci:5432/appdb'
+        SPRING_DATASOURCE_USERNAME = 'app'
+        SPRING_DATASOURCE_PASSWORD = 'ci_test_password_only'
+      }
       steps {
-        sh 'mvn -B "-Dtest=*,!*IntegrationTest" test'
+        sh 'mvn -B "-Dtest=*,!ClickHouseWriterIntegrationTest" test'
       }
     }
   }
